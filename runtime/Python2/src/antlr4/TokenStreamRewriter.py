@@ -88,8 +88,7 @@ class TokenStreamRewriter(object):
     def delete(self, program_name, from_idx, to_idx):
         if isinstance(from_idx, Token):
             self.replace(program_name, from_idx.tokenIndex, to_idx.tokenIndex, "")
-        else:
-            self.replace(program_name, from_idx, to_idx, "")
+        self.replace(program_name, from_idx, to_idx, "")
 
     def lastRewriteTokenIndex(self, program_name=DEFAULT_PROGRAM_NAME):
         return self.lastRewriteTokenIndexes.get(program_name, -1)
@@ -101,11 +100,14 @@ class TokenStreamRewriter(object):
         return self.programs.setdefault(program_name, [])
 
     def getDefaultText(self):
-        return self.getText(self.DEFAULT_PROGRAM_NAME, 0, len(self.tokens.tokens) - 1)
+        return self.getText(self.DEFAULT_PROGRAM_NAME, 0, len(self.tokens.tokens))
 
     def getText(self, program_name, start, stop):
         """
-        :return: the text in tokens[start, stop](closed interval)
+        :type interval: Interval.Interval
+        :param program_name:
+        :param interval:
+        :return:
         """
         rewrites = self.programs.get(program_name)
 
@@ -171,13 +173,13 @@ class TokenStreamRewriter(object):
             if any((iop is None, not isinstance(iop, TokenStreamRewriter.InsertBeforeOp))):
                 continue
             prevInserts = [op for op in rewrites[:i] if isinstance(op, TokenStreamRewriter.InsertBeforeOp)]
-            for prev_index, prevIop in enumerate(prevInserts):
+            for i, prevIop in enumerate(prevInserts):
                 if prevIop.index == iop.index and type(prevIop) is TokenStreamRewriter.InsertBeforeOp:
                     iop.text += prevIop.text
-                    rewrites[prev_index] = None
+                    rewrites[i] = None
                 elif prevIop.index == iop.index and type(prevIop) is TokenStreamRewriter.InsertAfterOp:
                     iop.text = prevIop.text + iop.text
-                    rewrites[prev_index] = None
+                    rewrites[i] = None
             # look for replaces where iop.index is in range; error
             prevReplaces = [op for op in rewrites[:i] if type(op) is TokenStreamRewriter.ReplaceOp]
             for rop in prevReplaces:
